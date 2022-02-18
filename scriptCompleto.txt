@@ -1,0 +1,206 @@
+CREATE DATABASE [OrsolaLiccardo.GestioneStruttura]
+
+
+CREATE TABLE Strutture
+(
+  Id INT IDENTITY(1,1) PRIMARY KEY NOT NULL,
+  Nome nvarchar(50) NOT NULL,
+  Città nvarchar(50) NOT NULL,
+  Stato nvarchar(50) NOT NULL,
+  IdTipologiaStruttura int NOT NULL,
+  IdPernottamento int NOT NULL,
+  ServiziOfferti nvarchar(100) NOT NULL,
+  AnimaliAmmessi bit NOT NULL,
+  CostoAPersona float NOT NULL,
+  CONSTRAINT CHK_TipologiaServizi CHECK (CostoAPersona>0)
+)
+
+--Inserimento dei dati
+INSERT INTO dbo.Strutture
+VALUES  ('Il Granato','Salerno','Italia',1,1,'wifi,cassaforte',1,60),
+        ('Il Granato','Salerno','Italia',1,2,'wifi,cassaforte',1,75),
+		('Il Granato','Salerno','Italia',1,3,'wifi,cassaforte',1,85),
+        ('Il Granato','Salerno','Italia',1,4,'wifi,cassaforte',1,150),
+		('San Pietro','Napoli','Italia',2,1,'wifi,cassaforte,spa&centro benessere,piscina',1,300),
+		('San Pietro','Napoli','Italia',2,2,'wifi,cassaforte,spa&centro benessere,piscina',1,350),
+		('San Pietro','Napoli','Italia',2,3,'wifi,cassaforte,spa&centro benessere,piscina',1,400),
+		('San Pietro','Napoli','Italia',2,1,'wifi,cassaforte,spa&centro benessere,piscina',1,500),
+		('Russo','Salerno','Italia',3,1,'wifi,piscina',1,30),
+		('Russo','Salerno','Italia',3,2,'wifi,piscina',1,35),
+		('Russo','Salerno','Italia',3,3,'wifi,piscina',1,50),
+		('Russo','Salerno','Italia',3,4,'wifi,piscina',1,65),
+		('La Violetta','Messina','Italia',4,1,'wifi,piscina',1,40),
+		('La Violetta','Messina','Italia',4,2,'wifi,piscina',1,45),
+	    ('La Violetta','Messina','Italia',4,3,'wifi,piscina',1,50),
+		('La Violetta','Messina','Italia',4,4,'wifi,piscina',1,60)
+
+	--Verifico inserimento
+SELECT*FROM Strutture	
+       
+		
+		
+
+CREATE TABLE TipoDiStruttura
+(
+  Id INT IDENTITY(1,1) PRIMARY KEY NOT NULL,
+  TipologiaStruttura nvarchar(50) NOT NULL,
+)
+
+--Inserimento dei dati
+INSERT INTO dbo.TipoDiStruttura
+VALUES  ('Agriturismo'),
+		('Hotel'),
+		('Casa Vacanze'),
+		('Residence')
+		
+--Verifico inserimento
+SELECT*FROM TipoDiStruttura
+
+CREATE TABLE Pernottamento
+(
+ Id INT IDENTITY(1,1) PRIMARY KEY NOT NULL,
+ FormulaPernottamento nvarchar(50) NOT NULL,
+)
+--Inserimento dati
+INSERT INTO dbo.Pernottamento
+VALUES ('Solo Pernottamento'),
+       ('Pernottamento e Prima Colazione'),
+	   ('Mezza Pensione'),
+	   ('Pensione Completa')
+
+--Verifico inserimento
+SELECT*FROM Pernottamento
+
+CREATE TABLE Cliente
+(
+ Id int IDENTITY(1,1) PRIMARY KEY NOT NULL,
+ Nome nvarchar(50) NOT NULL,
+ Cognome nvarchar(50) NOT NULL,
+ DataDiNascita DateTime NOT NULL,
+ IdStruttura int NOT NULL,
+ DataArrivo datetime not null,
+ DataPartenza datetime not null
+)
+
+
+
+--Aggiungo un controllo sulla data di partenza
+ALTER TABLE Cliente add CONSTRAINT CHK_DataPartenza CHECK (DataPartenza>DataArrivo)
+
+INSERT INTO dbo.Cliente
+VALUES ('Ursula','Liccardo','1988-11-30', 1),
+       ('Maria','De Stefano','1991-08-15', 10),
+	   ('Alberto','Angela','1973-04-08', 8),
+	   ('Luigi','Romano','1985-10-21', 14)
+
+
+--Verifico inserimento
+SELECT*FROM Cliente
+
+CREATE TABLE Prenotazioni
+(
+ Id int identity(1,1) primary key NOT NULL,
+ IdCliente int NOT NULL,
+ IdStruttura int NOT NULL,
+ DataArrivo Date NOT NULL,
+ DataPartenza Date NOT NULL,
+ NumeroPersone int NOT NULL,
+ Constraint CHK_DataPartenza check (DataPartenza>DataArrivo)
+)
+
+
+--Inserimento dati
+insert into Prenotazioni
+values (1,1,'2021-04-06','2021-04-16',3),
+       (2,2,'2020-06-01','2020-06-15',4),
+	   (3,3,'2021-07-10','2021-07-25',2),
+	   (4,4,'2020-08-12','2021-08-22',2)
+
+--Verifico inserimento
+SELECT*FROM Prenotazioni
+
+
+
+--STORE PROCEDURE
+--Creare una stored procedure che, scelto un servizio, mostri tutte le strutture che lo offrono.
+CREATE PROCEDURE VisualizzaServiziStrutture
+AS
+declare @ServiziOfferti nvarchar (50)
+set @ServiziOfferti='wifi,piscina'
+select*from dbo.Strutture as s
+where s.ServiziOfferti=@ServiziOfferti
+
+exec VisualizzaServiziStrutture
+
+--Creare una stored procedure che, scelto un tipo di struttura, mostri le strutture di quel tipo.
+--Ad esempio voglio visualizzare gli Hotel, quindi la tipologia numero 2
+CREATE PROCEDURE VisualizzaTipoStruttura
+AS
+declare @IdTipologiaStruttura int
+set @IdTipologiaStruttura=2
+select*from dbo.Strutture as s
+where s.IdTipologiaStruttura=@IdTipologiaStruttura
+
+exec VisualizzaTipoStruttura
+
+--Creare una stored procedure che, scelto un tipo di pernottamento, mostri le strutture di quel tipo.
+CREATE PROCEDURE [mostra.Tipologie]
+as
+declare @IdPernottamento nvarchar (50)
+set @IdPernottamento=3
+select
+s.Nome,
+s.Città,
+s.ServiziOfferti,
+p.FormulaPernottamento
+from dbo.Strutture as s
+join dbo.Pernottamento as p
+on s.IdPernottamento=p.Id
+where p.Id=@IdPernottamento
+
+
+exec [mostra.Tipologie]
+
+--Creare una stored procedure che scelta una struttura, una data di arrivo, una data di partenza 
+--e il numero di persone per cui si vuole prenotare, salvi le informazioni in una tabella 
+--chiamata Prenotazioni.
+--La stored dovrà tenere traccia anche delle informazioni del cliente che effettua la prenotazione.
+
+CREATE PROCEDURE SceltaStrutture
+as
+select distinct 
+s.Nome,
+s.Città,
+s.CostoAPersona,
+s.ServiziOfferti,
+p.DataArrivo,
+p.DataPartenza,
+p.NumeroPersone,
+cl.Nome,
+cl.Cognome,
+cl.DataDiNascita,
+GiorniPernottamento=DATEDIFF(day,p.DataArrivo,p.DataPartenza),
+PrezzoTotale= s.CostoAPersona*p.NumeroPersone*DATEDIFF(day,p.DataArrivo,p.DataPartenza)
+
+
+from dbo.Strutture as s
+join dbo.Prenotazioni as p
+on p.IdStruttura=s.Id
+left join dbo.Cliente as cl
+on cl.Id=p.IdCliente
+Go
+
+exec dbo.SceltaStrutture
+
+
+----Creare una vista che mostri tutte le prenotazioni(cliente, data arrivo, data partenza, numero persone,
+----nome struttura, tipo struttura, totale(prezzo * giorni * persone)
+--CREATE VIEW dbo.Prenotazioni
+
+
+
+
+
+
+
+
